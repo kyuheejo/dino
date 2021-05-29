@@ -143,6 +143,9 @@ class VisionTransformer(nn.Module):
             img_size=img_size[0], patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
+        # nn.Parameter: A kind of Tensor that is to be considered a module parameter.
+        # torch.zeros: Returns a tensor filled with the scalar value 0, with the shape defined by the variable argument size
+        # Both CLS token and position embedding (1D) are learnable vectors 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate)
@@ -174,6 +177,7 @@ class VisionTransformer(nn.Module):
     def interpolate_pos_encoding(self, x, w, h):
         npatch = x.shape[1] - 1
         N = self.pos_embed.shape[1] - 1
+        # we don't need interpolation when the input has the default size
         if npatch == N and w == h:
             return self.pos_embed
         class_pos_embed = self.pos_embed[:, 0]
@@ -183,6 +187,7 @@ class VisionTransformer(nn.Module):
         h0 = h // self.patch_embed.patch_size
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
+        # we use interpolation when the input has a different size 
         w0, h0 = w0 + 0.1, h0 + 0.1
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed.reshape(1, int(math.sqrt(N)), int(math.sqrt(N)), dim).permute(0, 3, 1, 2),
